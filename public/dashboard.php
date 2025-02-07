@@ -20,6 +20,9 @@ $posts = $post->getAllPosts();
 
 
 ?>
+<script>
+    const currentUsername = "<?= isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'], ENT_QUOTES, 'UTF-8') : ''; ?>";
+</script>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -113,7 +116,7 @@ $posts = $post->getAllPosts();
         const formData = new FormData(form);
 
         // AJAX request to post content
-fetch('http://localhost/heals/actions/post_posting.php', {
+fetch('http://localhost/healhealz-social-app/actions/post_posting.php', {
     method: 'POST',
     body: formData
 })
@@ -180,7 +183,7 @@ fetch('http://localhost/heals/actions/post_posting.php', {
 });
 // Fungsi untuk menangani aksi like
 function handleLike(postId, button) {
-    fetch("http://localhost/heals/actions/like_post.php", {
+    fetch("http://localhost/healz-social-app/actions/like_post.php", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: "post_id=" + postId
@@ -215,7 +218,7 @@ function toggleCommentSection(postId) {
                 let postId = this.dataset.postid;
                 let likeButton = this;
 
-                fetch("http://localhost/heals/actions/like_post.php", {
+                fetch("http://localhost/healz-social-app/actions/like_post.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: "post_id=" + postId
@@ -235,49 +238,59 @@ function toggleCommentSection(postId) {
         });
 
  // Handle comment button click
-    document.querySelectorAll(".comment-btn").forEach(button => {
-        button.addEventListener("click", function () {
-            let postId = this.dataset.postid;
-            const commentSection = document.getElementById("comments-" + postId);
+ document.querySelectorAll(".comment-btn").forEach(button => {
+    button.addEventListener("click", function () {
+        let postId = this.dataset.postid;
+        const commentSection = document.getElementById("comments-" + postId);
 
-            if (!commentSection) {
-                // If the comment section doesn't exist, create it
-                const newCommentSection = document.createElement('div');
-                newCommentSection.classList.add('comments-section', 'mt-3', 'hidden');
-                newCommentSection.id = "comments-" + postId;
+        if (!commentSection) {
+            // Jika belum ada, buat comment section
+            const newCommentSection = document.createElement('div');
+            newCommentSection.classList.add('comments-section', 'mt-3', 'hidden');
+            newCommentSection.id = "comments-" + postId;
 
-                // Add comment input field and button dynamically
-                newCommentSection.innerHTML = `
-                    <input type="text" class="border p-2 w-full rounded comment-input" placeholder="Add Comment...">
-                    <button class="text-yellow-500 px-4 py-1 rounded mt-1 submit-comment" data-postid="${postId}">Send Comment</button>
-                    <div class="comments-list mt-2"></div>
+            newCommentSection.innerHTML = `
+                <input type="text" class="border p-2 w-full rounded comment-input" placeholder="Add Comment...">
+                <button class="text-yellow-500 px-4 py-1 rounded mt-1 submit-comment" data-postid="${postId}">Send Comment</button>
+                <div class="comments-list mt-2"></div>
+            `;
+
+            this.parentElement.parentElement.appendChild(newCommentSection);
+        }
+
+        // Tampilkan atau sembunyikan comment section
+        document.getElementById("comments-" + postId).classList.toggle("hidden");
+
+        // Ambil komentar dari server jika belum dimuat
+        let commentsList = document.getElementById("comments-" + postId).querySelector(".comments-list");
+        if (commentsList.children.length === 0) {
+            fetch(`http://localhost/healz-social-app/actions/get_comments.php?post_id=${postId}`)
+    .then(response => response.json())
+    .then(data => {
+        console.log("Komentar dari server:", data);  // Debugging response
+        if (data.comments) {
+            commentsList.innerHTML = "";  // Kosongkan daftar sebelumnya
+            data.comments.forEach(comment => {
+                console.log("Komentar:", comment);  // Debugging per komentar
+                let commentElement = document.createElement("div");
+                commentElement.classList.add("comment", "mb-2");
+                commentElement.innerHTML = `
+                    <div class="flex items-center space-x-2 mb-2">
+                        <i class="fas fa-user-circle text-gray-500 text-xl"></i>
+                        <span class="font-bold text-gray-800">${comment.username || "Unknown"}</span>
+                    </div>
+                    <p>${comment.content}</p>
                 `;
+                commentsList.appendChild(commentElement);
+            });
+        }
+    })
+    .catch(error => console.error("Error:", error));
 
-                // Append the new comment section to the post
-                this.parentElement.parentElement.appendChild(newCommentSection);
-            }
 
-            // Now toggle the visibility of the comment section
-            document.getElementById("comments-" + postId).classList.toggle("hidden");
-
-            // Fetch comments for this post if they haven't been loaded
-            if (document.getElementById("comments-" + postId).querySelector(".comments-list").children.length === 0) {
-                fetch(`http://localhost/heals/actions/get_comments.php?post_id=${postId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.comments) {
-                            const commentsList = document.getElementById("comments-" + postId).querySelector(".comments-list");
-                            data.comments.forEach(comment => {
-                                let commentElement = document.createElement("p");
-                                commentElement.textContent = comment.content;
-                                commentsList.appendChild(commentElement);
-                            });
-                        }
-                    });
-            }
-        });
+        }
     });
-
+});
     // Event delegation for the submit-comment button (to handle dynamically added comments)
     document.body.addEventListener("click", function (event) {
     if (event.target && event.target.classList.contains("submit-comment")) {
@@ -291,34 +304,35 @@ function toggleCommentSection(postId) {
         }
 
         // Send the comment via AJAX
-        fetch("http://localhost/heals/actions/post_comment.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `post_id=${postId}&comment_text=${encodeURIComponent(commentText)}&username=${encodeURIComponent("<?= $_SESSION['username']; ?>")}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                let commentsList = document.querySelector("#comments-" + postId + " .comments-list");
-                let newComment = document.createElement("div");
-                newComment.classList.add('comment', 'mb-2');
-                newComment.innerHTML = `
-                    <div class="flex items-center space-x-2 mb-2">
-                        <i class="fas fa-user-circle text-gray-500 text-xl"></i>
-                        <span class="font-bold text-gray-800">${data.username}</span> <!-- Display username -->
-                    </div>
-                    <p>${commentText}</p>
-                `;
-                commentsList.appendChild(newComment);
-                commentInput.value = "";  // Clear the comment input field after submission
-            } else {
-                alert(data.error || "Failed to post the comment.");
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while submitting the comment.');
-        });
+        fetch("http://localhost/healz-social-app/actions/post_comment.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `post_id=${postId}&comment_text=${encodeURIComponent(commentText)}&username=${encodeURIComponent(currentUsername)}`
+
+})
+.then(response => response.json())
+.then(data => {
+    if (data.success) {
+        let commentsList = document.querySelector("#comments-" + postId + " .comments-list");
+        let newComment = document.createElement("div");
+        newComment.classList.add('comment', 'mb-2');
+        newComment.innerHTML = `
+            <div class="flex items-center space-x-2 mb-2">
+                <i class="fas fa-user-circle text-gray-500 text-xl"></i>
+                <span class="font-bold text-gray-800">${currentUsername}</span> <!-- Gunakan currentUsername -->
+            </div>
+            <p>${commentText}</p>
+        `;
+        commentsList.appendChild(newComment);
+        commentInput.value = "";  // Bersihkan input setelah komentar dikirim
+    } else {
+        alert(data.error || "Failed to post the comment.");
+    }
+})
+.catch(error => {
+    console.error('Error:', error);
+    alert('An error occurred while submitting the comment.');
+});
     }
 });
 

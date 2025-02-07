@@ -4,6 +4,8 @@ require_once '../classes/Database.php';
 require_once '../classes/User.php';
 require_once '../classes/Comment.php';
 
+header('Content-Type: application/json'); // Pastikan response selalu JSON
+
 $user = new User();
 $comment = new Comment();
 
@@ -13,8 +15,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit();
     }
 
-    $postId = $_GET['post_id'];
+    if (!isset($_GET['post_id']) || empty($_GET['post_id'])) {
+        echo json_encode(["error" => "Invalid post ID"]);
+        exit();
+    }
+
+    $postId = intval($_GET['post_id']); // Pastikan ini angka
     $comments = $comment->getComments($postId);
-    echo json_encode(["comments" => $comments]);
+
+    if ($comments === false) {
+        echo json_encode(["error" => "Failed to fetch comments"]);
+    } else {
+        echo json_encode(["comments" => $comments]);
+    }
+} else {
+    echo json_encode(["error" => "Invalid request method"]);
 }
 ?>

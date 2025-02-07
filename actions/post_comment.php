@@ -27,11 +27,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     error_log("User ID: $userId, Post ID: $postId, Comment: $commentText");
 
     if ($comment->addComment($postId, $userId, $commentText)) {
-        // Fetch the newly added comment
-        $newComment = $comment->getLatestComment($postId, $userId);
-        echo json_encode(["success" => "Comment posted successfully", "comment" => $newComment]);
+    // Fetch the newly added comment with username
+    $newComment = $comment->getLatestComment($postId, $userId);
+    
+    if ($newComment) {
+        echo json_encode([
+            "success" => "Comment posted successfully", 
+            "comment" => $newComment,
+            "username" => $newComment['username'] // Tambahkan username
+        ]);
     } else {
-        echo json_encode(["error" => "Failed to post comment"]);
+        echo json_encode(["error" => "Failed to fetch comment"]);
     }
+} else {
+    echo json_encode(["error" => "Failed to post comment"]);
+}
 }
 ?>

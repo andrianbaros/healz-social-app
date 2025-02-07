@@ -1,1 +1,5 @@
-DirectoryIndex dashboard.php index.php index.html
+RewriteEngine On
+RewriteBase /healz-social-app/public/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
