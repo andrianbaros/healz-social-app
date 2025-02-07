@@ -1,8 +1,8 @@
 <?php
 session_start();
-require_once 'classes/database.php';
-require_once 'actions/get_messages.php';
-require_once 'actions/send_messages.php';
+require_once '../classes/database.php';
+require_once '../actions/get_messages.php';
+require_once '../actions/send_messages.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
