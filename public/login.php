@@ -21,7 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
   </head>
-  <body class="min-h-screen bg-cover bg-center text-white" style="background-image: url('assets/images/bg.png')">
+  <body class="min-h-screen bg-cover bg-center text-white" style="background-image: url('../assets/images/bg.png')">
     <div class="flex justify-between h-screen px-20">
       <div class="flex-2 mt-40 ml-20">
         <h1 class="text-5xl font-bold leading-tight">Welcome Back!</h1>
