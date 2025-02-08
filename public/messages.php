@@ -62,12 +62,21 @@ require_once '../actions/send_messages.php';
             </div>
             <div class="p-4 bg-yellow-300 flex items-center">
                 <input type="text" id="message-input" placeholder="Send Your Messages" class="flex-1 p-2 rounded-lg">
+                
+                <!-- Location Button -->
+                <button id="send-location" class="mx-2">
+                    <i class="fas fa-location-arrow"></i> Send Location
+                </button>
+
                 <button id="send-button" class="mx-2">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
         </div>
     </div>
+
+ <!-- Include Leaflet.js (move this to the bottom to ensure it's loaded properly) -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
     <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -77,7 +86,10 @@ require_once '../actions/send_messages.php';
         const chatUsernameElement = document.getElementById("chat-username");
         const messageInput = document.getElementById("message-input");
         const sendButton = document.getElementById("send-button");
+        const sendLocationButton = document.getElementById("send-location");
         let selectedUsername = "";
+        let userLatitude = null;
+        let userLongitude = null;
 
         userItems.forEach(item => {
             item.addEventListener("click", function () {
@@ -114,34 +126,93 @@ require_once '../actions/send_messages.php';
             }
         });
 
-function sendMessage() {
-    const message = messageInput.value.trim();
+sendLocationButton.addEventListener("click", function () {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function (position) {
+            userLatitude = position.coords.latitude;
+            userLongitude = position.coords.longitude;
+
+            // Reverse geocoding to get the location name (city, country, etc.)
+            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${userLatitude}&lon=${userLongitude}&format=json`)
+                .then(response => response.json())
+                .then(data => {
+                    const locationName = data.display_name; // Get the full address
+                    const locationMessage = `Location: ${locationName} (Lat: ${userLatitude}, Lon: ${userLongitude})`;
+
+                    // Display map in the sender's chat bubble
+                    const mapHtml = generateMapHtml(userLatitude, userLongitude, locationName);
+
+                    // Send message with location and map HTML
+                    sendMessage(locationMessage, mapHtml);
+                })
+                .catch(error => console.error("Geocoding error:", error));
+        });
+    } else {
+        alert("Geolocation is not supported by this browser.");
+    }
+});
+
+function generateMapHtml(lat, lon, locationName) {
+    const mapContainerId = `map-${lat}-${lon}`;
+    
+    // Create the HTML structure for the map container
+    const mapHtml = `
+        <div class="map-container" style="width: 100%; height: 200px;">
+            <div id="${mapContainerId}" style="height: 100%;"></div>
+        </div>
+    `;
+    
+    // Add the map container HTML to the message
+    setTimeout(() => {
+        initializeMap(mapContainerId, lat, lon, locationName);
+    }, 0);
+
+    return mapHtml;
+}
+
+function initializeMap(mapContainerId, lat, lon, locationName) {
+    // Ensure the map is initialized after the container is rendered
+    const mapContainer = document.getElementById(mapContainerId);
+    if (!mapContainer) return; // Exit if the container isn't available
+
+    const map = L.map(mapContainerId).setView([lat, lon], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    L.marker([lat, lon]).addTo(map)
+        .bindPopup(locationName)
+        .openPopup();
+}
+
+
+function sendMessage(locationMessage = "", mapHtml = "") {
+    const message = messageInput.value.trim() + locationMessage;
     if (message !== "" && selectedUsername !== "") {
         const formData = new FormData();
         formData.append("action", "send_message");
         formData.append("receiver", selectedUsername);
-        formData.append("message", message);
+        formData.append("message", message + mapHtml); // Include map HTML in the message
 
         fetch("../actions/send_messages.php", { method: "POST", body: formData })
-        .then(response => response.text()) // Ambil respons sebagai teks
-        .then(text => {
-            console.log("Server Response:", text); // Log respons ke konsol untuk debugging
-            return JSON.parse(text); // Coba parse JSON
-        })
-        .then(data => {
-            if (data.status === "success") {
-                fetchMessages(selectedUsername); // Refresh pesan setelah mengirim
-                messageInput.value = ""; // Kosongkan input
-            } else {
-                alert(data.message);
-            }
-        })
-        .catch(error => console.error("Error parsing JSON:", error));
+            .then(response => response.text()) // Get response as text
+            .then(text => {
+                console.log("Server Response:", text); // Log response for debugging
+                return JSON.parse(text); // Try parsing JSON
+            })
+            .then(data => {
+                if (data.status === "success") {
+                    fetchMessages(selectedUsername); // Refresh messages after sending
+                    messageInput.value = ""; // Clear input
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => console.error("Error parsing JSON:", error));
     } else {
-        alert("Masukkan pesan atau pilih pengguna.");
+        alert("Please enter a message or select a user.");
     }
 }
-
 
     });
     </script>

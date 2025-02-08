@@ -32,7 +32,8 @@ $userData = $user->getUserById($user_id);
                 <label for="profileUpload" class="cursor-pointer relative inline-block">
                     <img id="profileImage" alt="Profile image"
                         class="w-24 h-24 rounded-full mx-auto object-cover border-4 border-white shadow-md"
-                        src="<?= htmlspecialchars($userData['profile_image'] ?? '../assets/images/default-profile.jpg') ?>" />
+                        src="<?= htmlspecialchars($userData['profile_picture']) ?>"/>
+
                     <div class="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                         <p class="text-white text-sm">Change Photo</p>
                     </div>

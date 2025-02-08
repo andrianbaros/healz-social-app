@@ -1,26 +1,29 @@
 <?php
+require '../classes/database.php';
 session_start();
-require 'classes/database.php';
 
-// Check if latitude and longitude are provided
-if (isset($_POST['latitude'], $_POST['longitude'])) {
-    $user_id = $_SESSION['user_id']; // Get user ID from session
-    $latitude = $_POST['latitude'];
-    $longitude = $_POST['longitude'];
+// Initialize database and Profile class
+$db = new Database();
+$conn = $db->conn;
+$profile = new Profile($conn);
 
-    $db = new Database();
-    $conn = $db->conn;
-    $profile = new Profile($conn);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['latitude']) && isset($_POST['longitude'])) {
+    $user_id = $_SESSION['user_id'] ?? null;
+    if ($user_id) {
+        $latitude = $_POST['latitude'];
+        $longitude = $_POST['longitude'];
 
-    // Update the user's location
-    if ($profile->updateUserLocation($user_id, $latitude, $longitude)) {
-        echo "Location updated successfully!";
+        // Update user location in the database
+        $profile->updateUserLocation($user_id, $latitude, $longitude);
+
+        // Return a JSON response
+        echo json_encode(['success' => true]);
     } else {
-        echo "Failed to update location.";
+        echo json_encode(['success' => false, 'message' => 'User not logged in']);
     }
-
-    $conn->close();
 } else {
-    echo "Latitude or Longitude missing.";
+    echo json_encode(['success' => false, 'message' => 'Invalid request']);
 }
+
+$conn->close();
 ?>
