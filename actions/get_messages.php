@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/../classes/database.php';
+require_once '../classes/Database.php';
 
 $db = new Database();
 $conn = $db->getConnection();

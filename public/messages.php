@@ -23,17 +23,11 @@ require_once '../actions/send_messages.php';
             <a class="flex items-center ml-2 hover:text-gray-600" href="markethealz.php">
                 <i class="fas fa-store"></i>
             </a>
-            <a class="flex items-center ml-2 hover:text-gray-600" href="#">
+            <a class="flex items-center ml-2 hover:text-gray-600" href="messages.php">
                 <i class="fas fa-envelope"></i>
-            </a>
-            <a class="flex items-center ml-2 space-x-2 text-gray-800 hover:text-gray-600" href="#">
-                <i class="fas fa-bookmark"></i>
             </a>
             <a class="flex items-center ml-2 space-x-2 text-gray-800 hover:text-gray-600" href="profile.php">
                 <i class="fas fa-user"></i>
-            </a>
-            <a class="flex items-center ml-2 space-x-2 text-gray-800 hover:text-gray-600" href="#">
-                <i class="fas fa-cog"></i>
             </a>
         </nav>
     </div>
@@ -95,7 +89,7 @@ require_once '../actions/send_messages.php';
         });
 
         function fetchMessages(receiver) {
-            fetch(`actions/get_messages.php?action=get_messages&receiver=${receiver}`)
+            fetch(`../actions/get_messages.php?action=get_messages&receiver=${receiver}`)
                 .then(response => response.json())
                 .then(data => {
                     chatMessages.innerHTML = "";
@@ -128,10 +122,7 @@ function sendMessage() {
         formData.append("receiver", selectedUsername);
         formData.append("message", message);
 
-        fetch("actions/send_messages.php", { // Sesuaikan path agar sesuai dengan pemisahan file
-            method: "POST",
-            body: formData,
-        })
+        fetch("../actions/send_messages.php", { method: "POST", body: formData })
         .then(response => response.text()) // Ambil respons sebagai teks
         .then(text => {
             console.log("Server Response:", text); // Log respons ke konsol untuk debugging

@@ -12,7 +12,7 @@ $like = new Like();
 $comment = new Comment();
 
 if (!$user->isLoggedIn()) {
-    header("Location: login.php");
+    header("Location: public/login.php");
     exit();
 }
 
