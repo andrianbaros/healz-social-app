@@ -8,6 +8,8 @@ require_once '../classes/Product.php'; // Controller
   <head>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <title>MarketHealz</title>
+    <link rel="icon" type="image/png" href="../assets/images/hkuning.png">
   </head>
   <body class="flex">
     <!-- Sidebar -->

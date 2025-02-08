@@ -69,6 +69,7 @@ $conn->close();
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Profile Page</title>
+    <link rel="icon" type="image/png" href="../assets/images/hkuning.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Leaflet CSS and JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
@@ -82,7 +83,7 @@ $conn->close();
         <div class="flex p-6">
             <div class="w-1/4 text-center">
                 <?php 
-                    $profilePic = $userData['profile_picture'] ?? 'assets/images/default-profile.jpg';
+                    $profilePic = $userData['profile_picture'] ?? '../assets/images/default-profile.jpg';
                     $username = $userData['username'] ?? 'Guest';
                 ?>
                 <img alt="Profile image" class="w-24 h-24 rounded-full mx-auto" src="<?= htmlspecialchars($profilePic) ?>" />

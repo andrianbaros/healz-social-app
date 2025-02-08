@@ -10,7 +10,7 @@ require_once '../actions/send_messages.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Messages</title>
-    <link rel="icon" type="image/png" href="assets/images/hkuning.png">
+    <link rel="icon" type="image/png" href="../assets/images/hkuning.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
@@ -43,7 +43,7 @@ require_once '../actions/send_messages.php';
                 $result = $conn->query($sql);
                 while ($row = $result->fetch_assoc()): ?>
                     <div class="flex items-center mb-4 cursor-pointer user-item" data-username="<?= htmlspecialchars($row['username']); ?>">
-                        <img src="<?= $row['profile_picture'] ? $row['profile_picture'] : 'assets/images/default-avatar.png'; ?>" class="w-10 h-10 bg-gray-400 rounded-full mr-4">
+                        <img src="<?= $row['profile_picture'] ? $row['profile_picture'] : '../assets/images/default-avatar.png'; ?>" class="w-10 h-10 bg-gray-400 rounded-full mr-4">
                         <div class="font-bold"><?= htmlspecialchars($row['username']); ?></div>
                     </div>
                 <?php endwhile; ?>
