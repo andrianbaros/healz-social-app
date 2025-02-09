@@ -66,279 +66,257 @@ $posts = $post->getAllPosts();
 
 <!-- Main Content -->
 <div class="flex-1 p-6">
-    <h2 class="text-xl font-bold mb-4">Welcome, <?= htmlspecialchars($_SESSION['username']); ?>!</h2>
+<h2 class="text-xl font-bold mb-4">
+    Welcome, <?= isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Guest'; ?>!
+</h2>
+
 
     <div class="bg-white p-4 rounded shadow-md mb-4">
-        <form id="postForm" method="POST" action="post_handler.php" enctype="multipart/form-data">
-            <textarea name="content" class="w-full p-2 border rounded" placeholder="Share Your Idea!" required></textarea>
+    <form id="postForm" enctype="multipart/form-data">
+        <textarea name="content" class="w-full p-2 border rounded" placeholder="Share Your Idea!" required></textarea>
 
+        <div class="flex items-center justify-between mt-2">
+            <!-- Ikon Upload -->
             <label for="imageUpload" class="cursor-pointer">
                 <i class="fas fa-paperclip text-gray-500 text-xl"></i>
             </label>
-            <input type="file" id="imageUpload" name="image" accept="image/*" class="hidden">
-            <br>
-            
-            <button type="submit" class="bg-yellow-500 text-white px-4 py-2 rounded mt-2">POST</button>
-        </form>
-    </div>
+            <input type="file" id="imageUpload" name="image" accept="image/*" class="hidden" onchange="previewImage(event)">
+
+            <button type="submit" class="bg-yellow-500 text-white px-4 py-2 rounded">POST</button>
+        </div>
+
+        <!-- Preview Gambar -->
+        <div id="previewContainer" class="mt-4 hidden">
+            <img id="imagePreview" class="w-full p-2 border rounded" alt="Preview Gambar">
+        </div>
+    </form>
+</div>
 
 
 
             <div class="container mt-6">
-   <?php foreach ($posts as $row): ?><?php
-   $likeCount = $like->getLikeCount($row['id']);?>
-     <div class="bg-white p-4 rounded shadow-md mb-4">
+<?php foreach ($posts as $row): ?>
+    <div class="bg-white p-4 rounded shadow-md mb-4">
         <div class="flex items-center space-x-2 mb-2">
             <i class="fas fa-user-circle text-gray-500 text-xl"></i>
-            <span class="font-bold text-gray-800"><?= htmlspecialchars($row['username']); ?></span> <!-- Display username -->
+            <span class="font-bold text-gray-800"><?= htmlspecialchars($row['username']); ?></span>
         </div>
         <p><?= htmlspecialchars($row['content']); ?></p>
+        
+        <?php if (!empty($row['image'])): ?>
+            <img src="<?= htmlspecialchars(str_replace('../', '', $row['image'])); ?>" alt="Posted Image" class="mt-2 w-32 rounded-md shadow">
+        <?php endif; ?>
+
         <div class="actions mt-2 flex space-x-2">
-            <button class="text-yellow-500 px-3 py-1 rounded like-btn liked" data-postid="<?= $row['id']; ?>">
-                <i class="fas fa-heart"></i> Like (<span id="like-count-<?= $row['id']; ?>"><?= $likeCount; ?></span>)
+            <button class="text-yellow-500 px-3 py-1 rounded like-btn" data-postid="<?= $row['id']; ?>">
+                <i class="fas fa-heart"></i> Like (<span id="like-count-<?= $row['id']; ?>"><?= $like->getLikeCount($row['id']); ?></span>)
             </button>
             <button class="text-gray-500 px-3 py-1 rounded comment-btn" data-postid="<?= $row['id']; ?>">
                 <i class="fas fa-comment"></i> Comment
             </button>
         </div>
     </div>
-<?php endforeach; ?>
+<?php endforeach; ?>    
 </div>
         </div>
     </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById('postForm');
 
     form.addEventListener("submit", function (event) {
-        event.preventDefault(); // Prevent form from normal submission
+        event.preventDefault();
 
         const formData = new FormData(form);
+        const content = form.querySelector("textarea[name='content']").value.trim();
+        const imageInput = document.getElementById("imageUpload");
 
-        // AJAX request to post content
-fetch('http://localhost/healz-social-app/actions/post_posting.php', {
-    method: 'POST',
-    body: formData
-})
-.then(response => response.json())
-.then(data => {
-    if (data.success) {
-        alert('Idea Posted Successfully!');
-
-        const newPostContent = data.new_post_content;
-        const newPostId = data.new_post_id;
-        const username = data.username;  
-
-        // Buat elemen postingan baru
-        const postContainer = document.createElement('div');
-        postContainer.classList.add('bg-white', 'p-4', 'rounded', 'shadow-md', 'mb-4');
-        postContainer.innerHTML = `
-            <div class="flex items-center space-x-2 mb-2">
-                <i class="fas fa-user-circle text-gray-500 text-xl"></i>
-                <span class="font-bold text-gray-800">${username}</span>
-            </div>
-            <p class="text-gray-800">${newPostContent}</p>
-            <div class="actions mt-2 flex space-x-2">
-                <button class="text-yellow-500 px-3 py-1 rounded like-btn flex items-center space-x-1" data-postid="${newPostId}">
-                    <i class="fas fa-heart"></i>
-                    <span>Like (<span id="like-count-${newPostId}">0</span>)</span>
-                </button>
-                <button class="text-gray-500 px-3 py-1 rounded comment-btn flex items-center space-x-1" data-postid="${newPostId}">
-                    <i class="fas fa-comment"></i>
-                    <span>Comment</span>
-                </button>
-            </div>
-            <div class="comments-section mt-3 hidden" id="comments-${newPostId}">
-                <input type="text" class="border p-2 w-full rounded comment-input" placeholder="Add Comment...">
-                <button class="text-yellow-500 px-4 py-1 rounded mt-1 submit-comment" data-postid="${newPostId}">Send Comment</button>
-                <div class="comments-list mt-2"></div>
-            </div>
-        `;
-
-        // Tambahkan postingan ke awal daftar postingan
-        const postList = document.querySelector('.container');
-        postList.insertBefore(postContainer, postList.firstChild);
-
-        // Tambahkan event listener ke tombol like baru
-        const likeButton = postContainer.querySelector('.like-btn');
-        likeButton.addEventListener('click', function () {
-            handleLike(newPostId, likeButton);
-        });
-
-        // Tambahkan event listener ke tombol comment baru
-        const commentButton = postContainer.querySelector('.comment-btn');
-        commentButton.addEventListener('click', function () {
-            toggleCommentSection(newPostId);
-        });
-
-        // Reset form setelah post
-        form.reset();
-    } else if (data.error) {
-        alert(data.error);
-    }
-})
-.catch(error => {
-    console.error('Error:', error);
-    alert('Terjadi kesalahan saat membuat post.');
-});
-// Fungsi untuk menangani aksi like
-function handleLike(postId, button) {
-    fetch("http://localhost/healz-social-app/actions/like_post.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "post_id=" + postId
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.like_count !== undefined) {
-            document.getElementById("like-count-" + postId).textContent = data.like_count;
-            if (data.action === "liked") {
-                button.classList.add("liked");
-            } else {
-                button.classList.remove("liked");
-            }
-        }
-    });
-}
-
-// Fungsi untuk menampilkan atau menyembunyikan kolom komentar
-function toggleCommentSection(postId) {
-    const commentSection = document.getElementById("comments-" + postId);
-    if (commentSection) {
-        commentSection.classList.toggle("hidden");
-    }
-}
-
-    });});
-
-
-        // Handle like button click
-        document.querySelectorAll(".like-btn").forEach(button => {
-            button.addEventListener("click", function () {
-                let postId = this.dataset.postid;
-                let likeButton = this;
-
-                fetch("http://localhost/healz-social-app/actions/like_post.php", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: "post_id=" + postId
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.like_count !== undefined) {
-                        document.getElementById("like-count-" + postId).textContent = data.like_count;
-                        if (data.action === "liked") {
-                            likeButton.classList.add("liked");
-                        } else {
-                            likeButton.classList.remove("liked");
-                        }
-                    }
-                });
-            });
-        });
-
- // Handle comment button click
- document.querySelectorAll(".comment-btn").forEach(button => {
-    button.addEventListener("click", function () {
-        let postId = this.dataset.postid;
-        const commentSection = document.getElementById("comments-" + postId);
-
-        if (!commentSection) {
-            // Jika belum ada, buat comment section
-            const newCommentSection = document.createElement('div');
-            newCommentSection.classList.add('comments-section', 'mt-3', 'hidden');
-            newCommentSection.id = "comments-" + postId;
-
-            newCommentSection.innerHTML = `
-                <input type="text" class="border p-2 w-full rounded comment-input" placeholder="Add Comment...">
-                <button class="text-yellow-500 px-4 py-1 rounded mt-1 submit-comment" data-postid="${postId}">Send Comment</button>
-                <div class="comments-list mt-2"></div>
-            `;
-
-            this.parentElement.parentElement.appendChild(newCommentSection);
-        }
-
-        // Tampilkan atau sembunyikan comment section
-        document.getElementById("comments-" + postId).classList.toggle("hidden");
-
-        // Ambil komentar dari server jika belum dimuat
-        let commentsList = document.getElementById("comments-" + postId).querySelector(".comments-list");
-        if (commentsList.children.length === 0) {
-            fetch(`http://localhost/healz-social-app/actions/get_comments.php?post_id=${postId}`)
-    .then(response => response.json())
-    .then(data => {
-        console.log("Komentar dari server:", data);  // Debugging response
-        if (data.comments) {
-            commentsList.innerHTML = "";  // Kosongkan daftar sebelumnya
-            data.comments.forEach(comment => {
-                console.log("Komentar:", comment);  // Debugging per komentar
-                let commentElement = document.createElement("div");
-                commentElement.classList.add("comment", "mb-2");
-                commentElement.innerHTML = `
-                    <div class="flex items-center space-x-2 mb-2">
-                        <i class="fas fa-user-circle text-gray-500 text-xl"></i>
-                        <span class="font-bold text-gray-800">${comment.username || "Unknown"}</span>
-                    </div>
-                    <p>${comment.content}</p>
-                `;
-                commentsList.appendChild(commentElement);
-            });
-        }
-    })
-    .catch(error => console.error("Error:", error));
-
-
-        }
-    });
-});
-    // Event delegation for the submit-comment button (to handle dynamically added comments)
-    document.body.addEventListener("click", function (event) {
-    if (event.target && event.target.classList.contains("submit-comment")) {
-        let postId = event.target.dataset.postid;
-        let commentInput = document.querySelector("#comments-" + postId + " .comment-input");
-        let commentText = commentInput.value;
-
-        if (commentText.trim() === "") {
-            alert("Please enter a comment.");
+        if (!content && (!imageInput.files || imageInput.files.length === 0)) {
+            alert("Please enter text or upload an image.");
             return;
         }
 
-        // Send the comment via AJAX
-        fetch("http://localhost/healz-social-app/actions/post_comment.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `post_id=${postId}&comment_text=${encodeURIComponent(commentText)}&username=${encodeURIComponent(currentUsername)}`
+        fetch('http://localhost/healz-social-app/actions/post_posting.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Idea Posted Successfully!');
 
-})
-.then(response => response.json())
-.then(data => {
-    if (data.success) {
-        let commentsList = document.querySelector("#comments-" + postId + " .comments-list");
-        let newComment = document.createElement("div");
-        newComment.classList.add('comment', 'mb-2');
-        newComment.innerHTML = `
-            <div class="flex items-center space-x-2 mb-2">
-                <i class="fas fa-user-circle text-gray-500 text-xl"></i>
-                <span class="font-bold text-gray-800">${currentUsername}</span> <!-- Gunakan currentUsername -->
-            </div>
-            <p>${commentText}</p>
-        `;
-        commentsList.appendChild(newComment);
-        commentInput.value = "";  // Bersihkan input setelah komentar dikirim
-    } else {
-        alert(data.error || "Failed to post the comment.");
-    }
-})
-.catch(error => {
-    console.error('Error:', error);
-    alert('An error occurred while submitting the comment.');
+                const newPostContent = data.new_post_content || "";
+                const newPostId = data.new_post_id;
+                const username = data.username;  
+                const imageUrl = data.image;
+
+                const postContainer = document.createElement('div');
+                postContainer.classList.add('bg-white', 'p-4', 'rounded', 'shadow-md', 'mb-4');
+                postContainer.innerHTML = `
+                    <div class="flex items-center space-x-2 mb-2">
+                        <i class="fas fa-user-circle text-gray-500 text-xl"></i>
+                        <span class="font-bold text-gray-800">${username}</span>
+                    </div>
+                    ${newPostContent ? `<p class="text-gray-800">${newPostContent}</p>` : ""}
+                    ${imageUrl ? `<img src="${imageUrl}" alt="Posted Image" class="mt-2 w-32 rounded-md shadow">` : ""}
+                    <div class="actions mt-2 flex space-x-2">
+                        <button class="text-yellow-500 px-3 py-1 rounded like-btn" data-postid="${newPostId}">
+                            <i class="fas fa-heart"></i> Like (<span id="like-count-${newPostId}">0</span>)
+                        </button>
+                        <button class="text-gray-500 px-3 py-1 rounded comment-btn" data-postid="${newPostId}">
+                            <i class="fas fa-comment"></i> Comment
+                        </button>
+                    </div>
+                `;
+
+                const postList = document.querySelector('.container.mt-6');
+                postList.insertBefore(postContainer, postList.firstChild);
+
+                form.reset();
+                document.getElementById("previewContainer").classList.add("hidden");
+            } else if (data.error) {
+                alert(data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat membuat post.');
+        });
+    });
+
+    document.querySelectorAll(".like-btn").forEach(button => {
+        button.addEventListener("click", function () {
+            let postId = this.dataset.postid;
+            let likeButton = this;
+
+            fetch("http://localhost/healz-social-app/actions/like_post.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: "post_id=" + postId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.like_count !== undefined) {
+                    document.getElementById("like-count-" + postId).textContent = data.like_count;
+                    if (data.action === "liked") {
+                        likeButton.classList.add("liked");
+                    } else {
+                        likeButton.classList.remove("liked");
+                    }
+                }
+            });
+        });
+    });
+
+    document.querySelectorAll(".comment-btn").forEach(button => {
+        button.addEventListener("click", function () {
+            let postId = this.dataset.postid;
+            const commentSection = document.getElementById("comments-" + postId);
+
+            if (!commentSection) {
+                const newCommentSection = document.createElement('div');
+                newCommentSection.classList.add('comments-section', 'mt-3', 'hidden');
+                newCommentSection.id = "comments-" + postId;
+
+                newCommentSection.innerHTML = `
+                    <input type="text" class="border p-2 w-full rounded comment-input" placeholder="Add Comment...">
+                    <button class="text-yellow-500 px-4 py-1 rounded mt-1 submit-comment" data-postid="${postId}">Send Comment</button>
+                    <div class="comments-list mt-2"></div>
+                `;
+
+                this.parentElement.parentElement.appendChild(newCommentSection);
+            }
+
+            document.getElementById("comments-" + postId).classList.toggle("hidden");
+
+            let commentsList = document.getElementById("comments-" + postId).querySelector(".comments-list");
+            if (commentsList.children.length === 0) {
+                fetch(`http://localhost/healz-social-app/actions/get_comments.php?post_id=${postId}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Komentar dari server:", data);
+                    if (data.comments) {
+                        commentsList.innerHTML = "";
+                        data.comments.forEach(comment => {
+                            console.log("Komentar:", comment);
+                            let commentElement = document.createElement("div");
+                            commentElement.classList.add("comment", "mb-2");
+                            commentElement.innerHTML = `
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <i class="fas fa-user-circle text-gray-500 text-xl"></i>
+                                    <span class="font-bold text-gray-800">${comment.username || "Unknown"}</span>
+                                </div>
+                                <p>${comment.content}</p>
+                            `;
+                            commentsList.appendChild(commentElement);
+                        });
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+            }
+        });
+    });
+
+    document.body.addEventListener("click", function (event) {
+        if (event.target && event.target.classList.contains("submit-comment")) {
+            let postId = event.target.dataset.postid;
+            let commentInput = document.querySelector("#comments-" + postId + " .comment-input");
+            let commentText = commentInput.value;
+
+            if (commentText.trim() === "") {
+                alert("Please enter a comment.");
+                return;
+            }
+
+            fetch("http://localhost/healz-social-app/actions/post_comment.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `post_id=${postId}&comment_text=${encodeURIComponent(commentText)}&username=${encodeURIComponent(currentUsername)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let commentsList = document.querySelector("#comments-" + postId + " .comments-list");
+                    let newComment = document.createElement("div");
+                    newComment.classList.add('comment', 'mb-2');
+                    newComment.innerHTML = `
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-user-circle text-gray-500 text-xl"></i>
+                            <span class="font-bold text-gray-800">${currentUsername}</span>
+                        </div>
+                        <p>${commentText}</p>
+                    `;
+                    commentsList.appendChild(newComment);
+                    commentInput.value = "";
+                } else {
+                    alert(data.error || "Failed to post the comment.");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while submitting the comment.');
+            });
+        }
+    });
 });
+
+function previewImage(event) {
+    const input = event.target;
+    const previewContainer = document.getElementById("previewContainer");
+    const imagePreview = document.getElementById("imagePreview");
+
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            imagePreview.src = e.target.result;
+            previewContainer.classList.remove("hidden");
+        };
+        
+        reader.readAsDataURL(input.files[0]);
     }
-});
-
-
-
+}
 
 </script>
 </body>
