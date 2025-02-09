@@ -117,7 +117,7 @@ $posts = $post->getAllPosts();
         const formData = new FormData(form);
 
         // AJAX request to post content
-fetch('http://localhost/healhealz-social-app/actions/post_posting.php', {
+fetch('http://localhost/healz-social-app/actions/post_posting.php', {
     method: 'POST',
     body: formData
 })
