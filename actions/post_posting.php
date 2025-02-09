@@ -1,51 +1,55 @@
 <?php
 session_start();
 require_once '../classes/Database.php';
-require_once '../classes/User.php';
 require_once '../classes/Post.php';
 
-$user = new User();
-$post = new Post();
+if (!isset($_SESSION['user_id'])) {
+    echo json_encode(["error" => "User not logged in"]);
+    exit();
+}
 
-$response = [];
+$user_id = $_SESSION['user_id'];
+$content = trim($_POST['content'] ?? '');
+$imagePath = null; // Default tidak ada gambar
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!$user->isLoggedIn()) {
-        $response['error'] = "User not logged in";
+// Cek apakah ada file yang diunggah
+if (!empty($_FILES['image']['name'])) {
+    $uploadDir = 'uploads/'; // Folder penyimpanan gambar
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true); // Buat folder jika belum ada
+    }
+
+    $imageName = time() . '_' . basename($_FILES['image']['name']);
+    $targetFile = $uploadDir . $imageName;
+
+    // Validasi jenis file
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!in_array($_FILES['image']['type'], $allowedTypes)) {
+        echo json_encode(["error" => "Invalid image format. Allowed formats: JPG, PNG, GIF"]);
+        exit();
+    }
+
+    // Pindahkan file ke folder uploads
+    if (move_uploaded_file($_FILES['image']['tmp_name'], $targetFile)) {
+        $imagePath = 'uploads/' . $imageName; // Simpan path relatif
     } else {
-        $content = $_POST['content'];
-        $userId = $_SESSION['user_id'];
-        $username = $_SESSION['username'];  // Ensure username is available
-        
-        // Handle file upload
-        $image = null;
-        if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-            $imageTmp = $_FILES['image']['tmp_name'];
-            $imageName = time() . "_" . basename($_FILES['image']['name']);
-            $imagePath = "../uploads/" . $imageName;
-
-            if (move_uploaded_file($imageTmp, $imagePath)) {
-                $image = $imagePath;
-            } else {
-                $response['error'] = "Failed to upload image";
-            }
-        }
-
-        // Insert the new post, including the image if available
-        $postId = $post->createPost($userId, $content, $image);
-        
-        if ($postId) {
-            $response['success'] = "Post created successfully";
-            $response['new_post_id'] = $postId;
-            $response['new_post_content'] = $content;
-            $response['image'] = $image ? $image : null;
-            $response['username'] = $username;  // Include username in the response
-        } else {
-            $response['error'] = "Failed to create post";
-        }
+        echo json_encode(["error" => "Failed to upload image"]);
+        exit();
     }
 }
 
-// Send JSON response back to the frontend
-echo json_encode($response);
+$post = new Post();
+$newPostId = $post->createPost($user_id, $content, $imagePath);
+
+if ($newPostId) {
+    echo json_encode([
+        "success" => true,
+        "new_post_id" => $newPostId,
+        "new_post_content" => $content,
+        "username" => $_SESSION['username'],
+        "image" => $imagePath
+    ]);
+} else {
+    echo json_encode(["error" => "Failed to create post"]);
+}
 ?>
