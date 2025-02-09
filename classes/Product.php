@@ -20,12 +20,12 @@ class ProductController {
         return $this->productModel->insertProduct($name, $category, $asset_type, $license, $price, $image);
     }
 
-   // Delete a product
+    // Delete a product
     public function deleteProduct($id) {
         return $this->productModel->removeProduct($id);
     }
-
 }
+
 class Product {
     private $id;
     private $title;
@@ -36,9 +36,11 @@ class Product {
     private $image;
     private $description;
     private $username;
+    private $user_id;
 
+    
     // Constructor
-    public function __construct($id, $title, $category, $asset_type, $license, $price, $image, $description, $username) {
+    public function __construct($id, $title, $category, $asset_type, $license, $price, $image, $description, $username, $user_id) {
         $this->id = $id;
         $this->title = $title;
         $this->category = $category;
@@ -48,19 +50,70 @@ class Product {
         $this->image = $image;
         $this->description = $description;
         $this->username = $username;
+        $this->user_id = $user_id;
     }
+     // Getter methods
+    public function getId() {
+        return $this->id;
+    }
+
+    public function getTitle() {
+        return $this->title;
+    }
+
+    public function getCategory() {
+        return $this->category;
+    }
+
+    public function getAssetType() {
+        return $this->asset_type;
+    }
+
+    public function getLicense() {
+        return $this->license;
+    }
+
+    public function getPrice() {
+        return $this->price;
+    }
+
+    public function getImage() {
+        return $this->image;
+    }
+
+    public function getDescription() {
+        return $this->description;
+    }
+
+    public function getUsername() {
+        return $this->username;
+    }
+    public function getUserId() {
+    return $this->user_id; // Pastikan atribut ini ada di class Product
+}
+
 
     // Get all products
     public static function getAllProducts($searchQuery = '') {
-        // Replace with actual database connection
-        $db = new mysqli('localhost', 'root', '', 'market'); // Example connection
+        $db = new mysqli('localhost', 'root', '', 'healz_db');
+
+        // Cek koneksi database
+        if ($db->connect_error) {
+            die("Koneksi gagal: " . $db->connect_error);
+        }
 
         if ($searchQuery) {
-            $stmt = $db->prepare("SELECT * FROM products WHERE title LIKE ?");
+            $stmt = $db->prepare("SELECT * FROM product_posts WHERE title LIKE ?");
+            if (!$stmt) {
+                die("Query error: " . $db->error);
+            }
             $searchQuery = "%" . $searchQuery . "%";
             $stmt->bind_param('s', $searchQuery);
         } else {
-            $stmt = $db->prepare("SELECT * FROM products");
+            $stmt = $db->prepare("SELECT * FROM product_posts");
+            if (!$stmt) {
+                die("Query error: " . $db->error);
+            }
         }
 
         $stmt->execute();
@@ -77,7 +130,8 @@ class Product {
                 $row['price'],
                 $row['image'],
                 $row['description'],
-                $row['username']
+                isset($row['username']) ? $row['username'] : null ,// Menghindari error Undefined Index
+                $row['user_id']
             );
             $products[] = $product;
         }
@@ -90,32 +144,55 @@ class Product {
 
     // Get a specific product by its ID
     public static function getProductById($id) {
-        // Replace with actual database connection
-        $db = new mysqli('localhost', 'root', '', 'market'); // Example connection
-
-        $stmt = $db->prepare("SELECT * FROM products WHERE id = ?");
-        $stmt->bind_param('i', $id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-
-        $product = new Product(
-            $row['id'],
-            $row['title'],
-            $row['category'],
-            $row['asset_type'],
-            $row['license'],
-            $row['price'],
-            $row['image'],
-            $row['description'],
-            $row['username']
-        );
-
-        $stmt->close();
-        $db->close();
-
-        return $product;
+    if (!is_numeric($id)) {
+        die("ID produk tidak valid.");
     }
+
+    $db = new mysqli('localhost', 'root', '', 'healz_db');
+
+    if ($db->connect_error) {
+        die("Koneksi gagal: " . $db->connect_error);
+    }
+
+    // Ambil produk beserta username penjualnya
+    $stmt = $db->prepare("
+        SELECT p.*, u.username 
+        FROM product_posts p
+        LEFT JOIN users u ON p.user_id = u.id
+        WHERE p.id = ?
+    ");
+
+    if (!$stmt) {
+        die("Query error: " . $db->error);
+    }
+
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+
+    if (!$row) {
+        die("Produk dengan ID $id tidak ditemukan.");   
+    }
+
+    $product = new Product(
+        $row['id'],
+        $row['title'],
+        $row['category'],
+        $row['asset_type'],
+        $row['license'],
+        $row['price'],
+        $row['image'],
+        $row['description'],
+        isset($row['username']) ? $row['username'] : 'Tidak Diketahui' ,// Menghindari error Undefined Index
+                $row['user_id']
+    );
+
+    $stmt->close();
+    $db->close();
+
+    return $product;
+}
 }
 
 // Initialize Controller
@@ -126,4 +203,8 @@ $asset_type_filter = isset($_GET['asset_type']) ? $_GET['asset_type'] : '';
 $license_filter = isset($_GET['license']) ? $_GET['license'] : '';
 
 $products = $productController->getAllProducts($search_query, $category_filter, $asset_type_filter, $license_filter);
+
+
 ?>
+
+

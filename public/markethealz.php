@@ -63,13 +63,30 @@ require_once '../classes/Product.php'; // Controller
             <p class='text-sm text-gray-600'><?= $product['category'] ?> - <?= $product['asset_type'] ?></p>
             <p class='text-sm text-gray-800'>License: <?= $product['license'] ?></p>
             <p class='text-sm font-bold mt-2'>Rp.  <?= $product['price'] ?></p>
-            <!-- Form untuk hapus produk -->
-            <form method="POST" action="../actions/delete_product.php" onsubmit="return confirmDelete();">
-  <input type="hidden" name="id" value="<?= $product['id'] ?>">
-  <button type="submit" class='bg-red-500 text-white px-3 py-1 rounded mt-2 hover:bg-red-700 transition'>
-    <i class='fas fa-trash'></i> Delete
-  </button>
-</form>
+            <table class="w-full">
+  <tr>
+    <td class="flex items-center gap-2">
+      <!-- Tombol Detail -->
+      <a href="product_detail.php?id=<?= $product['id'] ?>" 
+         class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-700 transition">
+        <i class="fas fa-info-circle"></i> Detail
+      </a>
+
+     <!-- Form untuk hapus produk -->
+<?php if ($_SESSION['user_id'] == $product['user_id']) : ?>
+  <form method="POST" action="../actions/delete_product.php" onsubmit="return confirmDelete();">
+    <input type="hidden" name="id" value="<?= $product['id'] ?>">
+    <button type="submit" 
+            class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-700 transition">
+      <i class="fas fa-trash"></i> Delete
+    </button>
+  </form>
+<?php endif; ?>
+
+    </td>
+  </tr>
+</table>
+
             
           </div>
         <?php endforeach; ?>
