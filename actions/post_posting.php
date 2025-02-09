@@ -14,7 +14,7 @@ $imagePath = null; // Default tidak ada gambar
 
 // Cek apakah ada file yang diunggah
 if (!empty($_FILES['image']['name'])) {
-    $uploadDir = 'uploads/'; // Folder penyimpanan gambar
+    $uploadDir = '../uploads/'; // Folder penyimpanan gambar
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true); // Buat folder jika belum ada
     }
@@ -31,7 +31,7 @@ if (!empty($_FILES['image']['name'])) {
 
     // Pindahkan file ke folder uploads
     if (move_uploaded_file($_FILES['image']['tmp_name'], $targetFile)) {
-        $imagePath = 'uploads/' . $imageName; // Simpan path relatif
+        $imagePath = '../uploads/' . $imageName; // Simpan path relatif
     } else {
         echo json_encode(["error" => "Failed to upload image"]);
         exit();

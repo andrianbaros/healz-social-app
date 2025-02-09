@@ -104,7 +104,7 @@ $posts = $post->getAllPosts();
         <p><?= htmlspecialchars($row['content']); ?></p>
         
         <?php if (!empty($row['image'])): ?>
-            <img src="<?= htmlspecialchars(str_replace('../', '', $row['image'])); ?>" alt="Posted Image" class="mt-2 w-32 rounded-md shadow">
+            <img src="<?= htmlspecialchars($row['../uploads/image']); ?>" alt="Posted Image" class="mt-2 w-32 rounded-md shadow">
         <?php endif; ?>
 
         <div class="actions mt-2 flex space-x-2">
