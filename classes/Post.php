@@ -41,6 +41,9 @@ class Post {
             }
         }
 
+        // Simpan path relatif dalam database
+        $imagePath = $imagePath ? str_replace("../", "", $imagePath) : null;
+
         $stmt = $this->conn->prepare("INSERT INTO posts (user_id, content, image) VALUES (?, ?, ?)");
         $stmt->bind_param("iss", $userId, $content, $imagePath);
         $success = $stmt->execute();
@@ -48,7 +51,7 @@ class Post {
         return [
             "success" => $success,
             "post_id" => $this->conn->insert_id,
-            "image_path" => $imagePath ? $imagePath : null
+            "image_path" => $imagePath
         ];
     }
 
@@ -63,6 +66,7 @@ class Post {
 
         while ($row = $result->fetch_assoc()) {
             $row['like_count'] = $this->like->getLikeCount($row['id']);
+            $row['image'] = $row['image'] ? "../" . $row['image'] : null; // Tambahkan kembali path relatif saat dipanggil
             $posts[] = $row;
         }
 
