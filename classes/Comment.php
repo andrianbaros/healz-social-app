@@ -47,26 +47,54 @@ public function getCommentsByPostId($postId) {
 }
 
     public function getComments($postId) {
-        $stmt = $this->conn->prepare("SELECT * FROM comments WHERE post_id = ? ORDER BY created_at DESC");
-        $stmt->bind_param("i", $postId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_all(MYSQLI_ASSOC);
+    $query = "SELECT comments.id, comments.content, comments.user_id, users.username 
+              FROM comments 
+              LEFT JOIN users ON comments.user_id = users.id 
+              WHERE comments.post_id = ? 
+              ORDER BY comments.created_at DESC";
+
+    $stmt = $this->conn->prepare($query);
+    if (!$stmt) {
+        die("Query Error: " . $this->conn->error); // Debugging jika query gagal
     }
-    public function getLatestComment($postId, $userId) {
-    $stmt = $this->conn->prepare("
-        SELECT comments.*, users.username 
-        FROM comments 
-        JOIN users ON comments.user_id = users.id 
-        WHERE comments.post_id = ? AND comments.user_id = ? 
-        ORDER BY comments.created_at DESC 
-        LIMIT 1
-    ");
+
+    $stmt->bind_param("i", $postId);
+    $stmt->execute();
+    
+    $result = $stmt->get_result();
+    $comments = [];
+
+    while ($row = $result->fetch_assoc()) {
+        $comments[] = $row;
+    }
+
+    $stmt->close();
+    return $comments;
+}
+
+public function getLatestComment($postId, $userId) {
+    $query = "SELECT comments.id, comments.content, comments.user_id, users.username, comments.created_at 
+              FROM comments 
+              LEFT JOIN users ON comments.user_id = users.id 
+              WHERE comments.post_id = ? AND comments.user_id = ? 
+              ORDER BY comments.created_at DESC 
+              LIMIT 1";
+
+    $stmt = $this->conn->prepare($query);
+    if (!$stmt) {
+        die("Query Error: " . $this->conn->error);
+    }
+
     $stmt->bind_param("ii", $postId, $userId);
     $stmt->execute();
     $result = $stmt->get_result();
-    return $result->fetch_assoc();
+    $comment = $result->fetch_assoc();
+    
+    $stmt->close();
+    return $comment;
 }
+
+
 
 
 }
