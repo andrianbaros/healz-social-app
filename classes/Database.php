@@ -1,4 +1,4 @@
-<!-- Database.php -->
+
 
 <?php
 class Database {
