@@ -97,9 +97,9 @@ $conn->close();
                 <?php endif; ?>
                 
                 <h2 class="mt-4 text-xl font-semibold"><?= htmlspecialchars($username) ?></h2>
-                <p class="text-gray-600">Freelance Graphic Designer</p>
-                <a href='joinascreator.php'><button class="mt-10 px-16 py-2 bg-yellow-500 text-white rounded-full">Join As Creator</button></a>
-                <a href="editprofile.php"><button class="mt-2 px-20 py-2 bg-yellow-500 text-white rounded-full">Edit Profile</button></a>
+                <!---<p class="text-gray-600">Freelance Graphic Designer</p>-->
+                <!---<a href='joinascreator.php'><button class="mt-10 px-16 py-2 bg-yellow-500 text-white rounded-full">Join As Creator</button></a>
+                --><a href="editprofile.php"><button class="mt-2 px-20 py-2 bg-yellow-500 text-white rounded-full">Edit Profile</button></a>
                 
                 <!-- Leaflet Map -->
                 <div id="map" class="w-full h-48 mt-6 rounded-lg shadow"></div>
@@ -142,7 +142,6 @@ $conn->close();
                                     <div class="flex items-center mt-4 text-gray-500">
                                         <button class="flex items-center mr-4"><i class="far fa-heart mr-1"></i> Like</button>
                                         <button class="flex items-center mr-4"><i class="far fa-comment mr-1"></i> Comment</button>
-                                        <button class="flex items-center"><i class="far fa-bookmark mr-1"></i> Save</button>
                                     </div>
                                 </div>
                                 <button class="text-gray-500"><i class="fas fa-ellipsis-h"></i></button>

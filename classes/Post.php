@@ -16,7 +16,7 @@ class Post {
         $imagePath = null;
 
         if ($image && isset($image['tmp_name']) && !empty($image['tmp_name'])) {
-            $targetDir = "../uploads/"; // Simpan di dalam folder uploads (relatif)
+            $targetDir = "uploads/"; // Gunakan path relatif langsung
             if (!is_dir($targetDir)) {
                 mkdir($targetDir, 0777, true);
             }
@@ -36,20 +36,36 @@ class Post {
                 return ["success" => false, "error" => "Image size must be less than 2MB."];
             }
 
+            // Pindahkan file yang diunggah ke folder tujuan
             if (!move_uploaded_file($image["tmp_name"], $imagePath)) {
                 return ["success" => false, "error" => "Failed to upload image."];
             }
         }
 
-        // Simpan path relatif dalam database
-        $imagePath = $imagePath ? str_replace("../", "", $imagePath) : null;
+        // Simpan hanya path relatif dalam database
+        $imagePath = $imagePath ? $imagePath : null;
 
+        // Cek koneksi sebelum eksekusi
+        if (!$this->conn) {
+            return ["success" => false, "error" => "Database connection error."];
+        }
+
+        // Query Insert
         $stmt = $this->conn->prepare("INSERT INTO posts (user_id, content, image) VALUES (?, ?, ?)");
+        if (!$stmt) {
+            return ["success" => false, "error" => "Failed to prepare statement: " . $this->conn->error];
+        }
+
         $stmt->bind_param("iss", $userId, $content, $imagePath);
         $success = $stmt->execute();
 
+        // Cek apakah query berhasil
+        if (!$success) {
+            return ["success" => false, "error" => "Database error: " . $stmt->error];
+        }
+
         return [
-            "success" => $success,
+            "success" => true,
             "post_id" => $this->conn->insert_id,
             "image_path" => $imagePath
         ];
@@ -66,7 +82,8 @@ class Post {
 
         while ($row = $result->fetch_assoc()) {
             $row['like_count'] = $this->like->getLikeCount($row['id']);
-            $row['image'] = $row['image'] ? "../" . $row['image'] : null; // Tambahkan kembali path relatif saat dipanggil
+            // Tambahkan kembali path relatif untuk gambar
+            $row['image'] = $row['image'] ? $row['image'] : null;
             $posts[] = $row;
         }
 

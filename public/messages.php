@@ -29,6 +29,9 @@ require_once '../actions/send_messages.php';
             <a class="flex items-center ml-2 space-x-2 text-gray-800 hover:text-gray-600" href="profile.php">
                 <i class="fas fa-user"></i>
             </a>
+                            <a class="flex items-center ml-2 space-x-2 text-gray-800 hover:text-red-800" href="../actions/logout.php">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
         </nav>
     </div>
 
@@ -36,23 +39,31 @@ require_once '../actions/send_messages.php';
         <div class="w-1/4 bg-yellow-300 p-4">
             <input type="text" id="search-user" placeholder="Search messages..." class="w-full px-4 py-2 rounded-lg border border-gray-400">
             <div id="user-list" class="mt-4">
-                <?php
-                $db = new Database();
-                $conn = $db->getConnection();
-                $sql = "SELECT username, profile_picture FROM users";
-                $result = $conn->query($sql);
-                while ($row = $result->fetch_assoc()): ?>
-                    <div class="flex items-center mb-4 cursor-pointer user-item" data-username="<?= htmlspecialchars($row['username']); ?>">
-                        <img src="<?= $row['profile_picture'] ? $row['profile_picture'] : '../assets/images/default-avatar.png'; ?>" class="w-10 h-10 bg-gray-400 rounded-full mr-4">
-                        <div class="font-bold"><?= htmlspecialchars($row['username']); ?></div>
-                    </div>
-                <?php endwhile; ?>
-            </div>
+    <?php
+    $db = new Database();
+    $conn = $db->getConnection();
+    $current_user = $_SESSION['username']; // Get the logged-in user
+
+    // Modify the SQL to exclude the logged-in user
+    $sql = "SELECT username, profile_picture FROM users WHERE username != ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $current_user);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()): ?>
+        <div class="flex items-center mb-4 cursor-pointer user-item" data-username="<?= htmlspecialchars($row['username']); ?>">
+            <img src="<?= $row['profile_picture'] ? $row['profile_picture'] : '../assets/images/default-avatar.png'; ?>" class="w-10 h-10 bg-gray-400 rounded-full mr-4">
+            <div class="font-bold"><?= htmlspecialchars($row['username']); ?></div>
+        </div>
+    <?php endwhile; ?>
+</div>
+
         </div>
 
         <div class="flex-1 flex flex-col">
             <div id="chat-header" class="flex items-center p-4 border-b border-gray-400">
-                <img id="chat-profile" src="assets/images/default-avatar.png" class="w-10 h-10 bg-gray-400 rounded-full mr-4">
+                <img id="chat-profile" src="../assets/images/default-avatar.png" class="w-10 h-10 bg-gray-400 rounded-full mr-4">
                 <div class="font-bold" id="chat-username">Pilih pengguna...</div>
             </div>
             <div id="chat-messages" class="flex-1 p-4 overflow-y-auto">

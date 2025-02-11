@@ -1,5 +1,6 @@
 <?php
 session_start();
+
 require_once '../classes/Database.php';
 require_once '../classes/User.php';
 require_once '../classes/Post.php';
@@ -11,14 +12,59 @@ $post = new Post();
 $like = new Like();
 $comment = new Comment();
 
-if (!$user->isLoggedIn()) {
-    header("Location: public/login.php");
-    exit();
+if ($user->isLoggedIn()) {
+    $user_id = $user->getUserId();
+    $profile_picture = $user->getProfilePicture($user_id);
+    $user_data = $user->getUserById($user_id);  // Assuming this will return user data including username, bio, email
+} else {
+    header('Location: login.php');
 }
 
 $posts = $post->getAllPosts();
 
 
+// Instantiate the Database class
+$database = new Database();
+
+// Get the connection
+$conn = $database->getConnection();
+
+// Ensure $post_user_id is properly set (for example, coming from session or request)
+$post_user_id = $user_id; // Replace this with actual user ID
+
+// SQL query to fetch user profile data
+$query = "SELECT profile_picture, username FROM users WHERE id = ?";
+
+// Prepare the statement
+$stmt = $conn->prepare($query);
+
+// Check if preparation was successful
+if ($stmt === false) {
+    // Output the error message from MySQL
+    die("Failed to prepare query: " . $conn->error);
+}
+
+// Bind the user_id parameter
+$stmt->bind_param('i', $post_user_id); // 'i' for integer
+
+// Execute the query
+$stmt->execute();
+
+// Store result
+$stmt->store_result();
+
+// Check if a record was found and fetch the data
+if ($stmt->num_rows > 0) {
+    $stmt->bind_result($profile_picture, $username);
+    $stmt->fetch(); // Fetch the result
+
+} else {
+
+}
+
+// Close the statement and connection
+$stmt->close();
+$database->closeConnection();
 ?>
 <script>
     const currentUsername = "<?= isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username'], ENT_QUOTES, 'UTF-8') : ''; ?>";
@@ -60,51 +106,51 @@ $posts = $post->getAllPosts();
                 <a class="flex items-center ml-2 space-x-2 text-gray-800 hover:text-gray-600" href="profile.php">
                     <i class="fas fa-user"></i> <span>Profile</span>
                 </a>
-
+                <a class="flex items-center ml-2 space-x-2 text-gray-800 hover:text-red-800" href="../actions/logout.php">
+                    <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+                </a>
             </nav>
         </div>
 
-<!-- Main Content -->
-<div class="flex-1 p-6">
-<h2 class="text-xl font-bold mb-4">
-    Welcome, <?= isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Guest'; ?>!
-</h2>
+        <!-- Main Content -->
+        <div class="flex-1 p-6">
+            <h2 class="text-xl font-bold mb-4">
+                Welcome, <?= isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Guest'; ?>!
+            </h2>
 
+            <div class="bg-white p-4 rounded shadow-md mb-4">
+                <form id="postForm" enctype="multipart/form-data">
+                    <textarea name="content" class="w-full p-2 border rounded" placeholder="Share Your Idea!" required></textarea>
 
-    <div class="bg-white p-4 rounded shadow-md mb-4">
-    <form id="postForm" enctype="multipart/form-data">
-        <textarea name="content" class="w-full p-2 border rounded" placeholder="Share Your Idea!" required></textarea>
+                    <div class="flex items-center justify-between mt-2">
+                        <!-- Ikon Upload -->
+                        <input type="file" id="imageUpload" name="image" accept="image/*" class="hidden" onchange="previewImage(event)">
 
-        <div class="flex items-center justify-between mt-2">
-            <!-- Ikon Upload -->
-            <label for="imageUpload" class="cursor-pointer">
-                <i class="fas fa-paperclip text-gray-500 text-xl"></i>
-            </label>
-            <input type="file" id="imageUpload" name="image" accept="image/*" class="hidden" onchange="previewImage(event)">
+                        <button type="submit" class="bg-yellow-500 text-white px-4 py-2 rounded">POST</button>
+                    </div>
 
-            <button type="submit" class="bg-yellow-500 text-white px-4 py-2 rounded">POST</button>
-        </div>
-
-        <!-- Preview Gambar -->
-        <div id="previewContainer" class="mt-4 hidden">
-            <img id="imagePreview" class="w-full p-2 border rounded" alt="Preview Gambar">
-        </div>
-    </form>
-</div>
-
-
+                    <!-- Preview Gambar -->
+                    <div id="previewContainer" class="mt-4 hidden">
+                        <img id="imagePreview" class="w-full p-2 border rounded" alt="Preview Gambar">
+                    </div>
+                </form>
+            </div>
 
             <div class="container mt-6">
-<?php foreach ($posts as $row): ?>
+                <?php foreach ($posts as $row): ?>
     <div class="bg-white p-4 rounded shadow-md mb-4">
         <div class="flex items-center space-x-2 mb-2">
-            <i class="fas fa-user-circle text-gray-500 text-xl"></i>
+            <!-- Ganti foto profil dengan gambar dari database -->
+            <?php 
+                $profile_picture = $user->getProfilePicture($row['user_id']);
+            ?>
+            <img src="../uploads/<?= htmlspecialchars($profile_picture); ?>" alt="User Profile Picture" class="w-8 h-8 rounded-full">
             <span class="font-bold text-gray-800"><?= htmlspecialchars($row['username']); ?></span>
         </div>
         <p><?= htmlspecialchars($row['content']); ?></p>
         
         <?php if (!empty($row['image'])): ?>
-            <img src="<?= htmlspecialchars($row['../uploads/image']); ?>" alt="Posted Image" class="mt-2 w-32 rounded-md shadow">
+            <img src="<?= htmlspecialchars($row['image']); ?>" alt="Posted Image" class="mt-2 w-32 rounded-md shadow">
         <?php endif; ?>
 
         <div class="actions mt-2 flex space-x-2">
@@ -117,7 +163,8 @@ $posts = $post->getAllPosts();
         </div>
     </div>
 <?php endforeach; ?>    
-</div>
+    
+            </div>
         </div>
     </div>
 
@@ -148,14 +195,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 const newPostContent = data.new_post_content || "";
                 const newPostId = data.new_post_id;
-                const username = data.username;  
+                const username = data.username;
                 const imageUrl = data.image;
+                const profileImage = data.profile_picture; // Ambil URL gambar profil dari respons
 
                 const postContainer = document.createElement('div');
                 postContainer.classList.add('bg-white', 'p-4', 'rounded', 'shadow-md', 'mb-4');
                 postContainer.innerHTML = `
                     <div class="flex items-center space-x-2 mb-2">
-                        <i class="fas fa-user-circle text-gray-500 text-xl"></i>
+                        <!-- Ganti gambar profil dengan data yang diterima dari backend -->
+                        <img src="${profileImage ? '../uploads/' + profileImage : '../assets/images/default-avatar.png'}" alt="User Profile Picture" class="w-8 h-8 rounded-full">
                         <span class="font-bold text-gray-800">${username}</span>
                     </div>
                     ${newPostContent ? `<p class="text-gray-800">${newPostContent}</p>` : ""}
@@ -183,13 +232,13 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error('Error:', error);
             alert('Terjadi kesalahan saat membuat post.');
         });
-    });
+});
 
-    document.querySelectorAll(".like-btn").forEach(button => {
-        button.addEventListener("click", function () {
-            let postId = this.dataset.postid;
-            let likeButton = this;
 
+    document.body.addEventListener("click", function (event) {
+        let likeButton = event.target.closest(".like-btn"); 
+        if (likeButton) {
+            let postId = likeButton.dataset.postid;
             fetch("http://localhost/healz-social-app/actions/like_post.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -199,19 +248,15 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(data => {
                 if (data.like_count !== undefined) {
                     document.getElementById("like-count-" + postId).textContent = data.like_count;
-                    if (data.action === "liked") {
-                        likeButton.classList.add("liked");
-                    } else {
-                        likeButton.classList.remove("liked");
-                    }
+                    likeButton.classList.toggle("liked", data.action === "liked");
                 }
             });
-        });
+        }
     });
 
-    document.querySelectorAll(".comment-btn").forEach(button => {
-        button.addEventListener("click", function () {
-            let postId = this.dataset.postid;
+    document.body.addEventListener("click", function (event) {
+        if (event.target && event.target.classList.contains("comment-btn")) {
+            let postId = event.target.dataset.postid;
             const commentSection = document.getElementById("comments-" + postId);
 
             if (!commentSection) {
@@ -225,7 +270,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     <div class="comments-list mt-2"></div>
                 `;
 
-                this.parentElement.parentElement.appendChild(newCommentSection);
+                event.target.parentElement.parentElement.appendChild(newCommentSection);
             }
 
             document.getElementById("comments-" + postId).classList.toggle("hidden");
@@ -233,29 +278,27 @@ document.addEventListener("DOMContentLoaded", function () {
             let commentsList = document.getElementById("comments-" + postId).querySelector(".comments-list");
             if (commentsList.children.length === 0) {
                 fetch(`http://localhost/healz-social-app/actions/get_comments.php?post_id=${postId}`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Komentar dari server:", data);
-                    if (data.comments) {
-                        commentsList.innerHTML = "";
-                        data.comments.forEach(comment => {
-                            console.log("Komentar:", comment);
-                            let commentElement = document.createElement("div");
-                            commentElement.classList.add("comment", "mb-2");
-                            commentElement.innerHTML = `
-                                <div class="flex items-center space-x-2 mb-2">
-                                    <i class="fas fa-user-circle text-gray-500 text-xl"></i>
-                                    <span class="font-bold text-gray-800">${comment.username || "Unknown"}</span>
-                                </div>
-                                <p>${comment.content}</p>
-                            `;
-                            commentsList.appendChild(commentElement);
-                        });
-                    }
-                })
-                .catch(error => console.error("Error:", error));
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.comments) {
+                            commentsList.innerHTML = "";
+                            data.comments.forEach(comment => {
+                                let commentElement = document.createElement("div");
+                                commentElement.classList.add("comment", "mb-2");
+                                commentElement.innerHTML = `
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <i class="fas fa-user-circle text-gray-500 text-xl"></i>
+                                        <span class="font-bold text-gray-800">${comment.username || "Unknown"}</span>
+                                    </div>
+                                    <p>${comment.content}</p>
+                                `;
+                                commentsList.appendChild(commentElement);
+                            });
+                        }
+                    })
+                    .catch(error => console.error("Error:", error));
             }
-        });
+        }
     });
 
     document.body.addEventListener("click", function (event) {
@@ -317,8 +360,6 @@ function previewImage(event) {
         reader.readAsDataURL(input.files[0]);
     }
 }
-
 </script>
 </body>
 </html>
-

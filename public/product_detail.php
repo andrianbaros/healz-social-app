@@ -43,6 +43,9 @@ if (!$product) {
             <a class="flex items-center ml-2 space-x-2 text-gray-800 hover:text-gray-600" href="profile.php">
                 <i class="fas fa-user"></i> <span>Profile</span>
             </a>
+                            <a class="flex items-center ml-2 space-x-2 text-gray-800 hover:text-red-800" href="../actions/logout.php">
+                    <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+                </a>
         </nav>
     </div>
 

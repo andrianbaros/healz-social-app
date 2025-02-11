@@ -31,9 +31,9 @@ class User {
         return $user;
     }
 
-    public function updateProfile($user_id, $username, $bio, $email, $password = null) {
+    public function updateProfile($user_id, $username, $bio, $email, $password = null, $profile_picture = null) {
         // Ambil data lama dari database
-        $stmt = $this->conn->prepare("SELECT username, bio, email, password FROM users WHERE id = ?");
+        $stmt = $this->conn->prepare("SELECT username, bio, email, password, profile_picture FROM users WHERE id = ?");
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -73,6 +73,12 @@ class User {
             $types .= "s";
         }
     
+        if ($profile_picture !== null && $profile_picture !== $oldData['profile_picture']) {
+            $updateFields[] = "profile_picture = ?";
+            $params[] = $profile_picture;
+            $types .= "s";
+        }
+    
         if (empty($updateFields)) {
             return true; // Tidak ada perubahan yang perlu dilakukan
         }
@@ -86,9 +92,15 @@ class User {
     
         return $stmt->execute();
     }
-    
-    
+
+    public function getProfilePicture($user_id) {
+        $stmt = $this->conn->prepare("SELECT profile_picture FROM users WHERE id = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+
+        return $user['profile_picture'] ?? 'default_profile.png';  // Return default image if none exists
+    }
 }
-
 ?>
-
