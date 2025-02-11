@@ -49,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           <div class="flex items-center justify-center">
             <span class="text-sm">or</span>
           </div>
-          <div>
+          <!---<div>
             <button type="button" class="w-full px-6 py-3 mt-1 text-white bg-gray-500 rounded-2xl hover:bg-gray-600">
               <i class="fab fa-google mr-2"></i>Sign In with Google
             </button>
@@ -58,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <button type="button" class="w-full px-6 py-3 mt-1 text-white bg-gray-500 rounded-2xl hover:bg-gray-600">
               <i class="fab fa-facebook-f mr-2"></i>Sign In with Facebook
             </button>
-          </div>
+          </div>-->
         </form>
         <div class="text-center mt-3">
           <p class="text-sm">Don’t you have an account? <a href="signup.php" class="font-medium text-white-500 hover:underline">Sign Up</a></p>
