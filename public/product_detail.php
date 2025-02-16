@@ -66,7 +66,7 @@ if (!$product) {
                     <p class="text-gray-700"><strong>Lisensi:</strong> <?php echo htmlspecialchars($product->getLicense()); ?></p>
                     <p class="text-xl font-bold text-yellow-500 mt-2">Rp. <?php echo htmlspecialchars($product->getPrice()); ?></p>
                     <p class="text-gray-600 mt-4"><strong>Deskripsi:</strong> <?php echo htmlspecialchars($product->getDescription()); ?></p>
-                    <p class="mt-4"><strong>Penjual:</strong> <a href="profilepost.php?id=<?php echo htmlspecialchars($product->getUserId()); ?>" class="text-blue-500 hover:underline"> <?php echo htmlspecialchars($product->getUsername()); ?></a></p>
+                    <p class="mt-4"><strong>Penjual:</strong> <h2 <?php echo htmlspecialchars($product->getUserId()); ?>" class="text-blue-500 hover:underline"> <?php echo htmlspecialchars($product->getUsername()); ?></h2><a href="messages.php">Go to Message</a></p>
                     <div class="mt-6">
                         <a href="markethealz.php" class="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 transition"><i class="fas fa-arrow-left"></i> Kembali</a>
                     </div>
