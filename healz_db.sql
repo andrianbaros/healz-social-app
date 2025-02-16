@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 12, 2025 at 07:13 AM
+-- Generation Time: Feb 16, 2025 at 08:07 AM
 -- Server version: 10.1.9-MariaDB
 -- PHP Version: 7.0.1
 
@@ -19,6 +19,27 @@ SET time_zone = "+00:00";
 --
 -- Database: `healz_db`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `admin`
+--
+
+CREATE TABLE `admin` (
+  `id` int(11) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Dumping data for table `admin`
+--
+
+INSERT INTO `admin` (`id`, `username`, `password`, `email`, `created_at`) VALUES
+(4, 'admin', '$2y$10$1zPRZhB0Z2EfsUM.n8QRAu3N58F0bbgTlbjJ/6gfk1GXREIpREFN.', 'admin@example.com', '2025-02-16 07:05:41');
 
 -- --------------------------------------------------------
 
@@ -218,6 +239,14 @@ INSERT INTO `users` (`id`, `username`, `email`, `password`, `profile_picture`, `
 --
 
 --
+-- Indexes for table `admin`
+--
+ALTER TABLE `admin`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`username`),
+  ADD UNIQUE KEY `email` (`email`);
+
+--
 -- Indexes for table `comments`
 --
 ALTER TABLE `comments`
@@ -271,6 +300,11 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for dumped tables
 --
 
+--
+-- AUTO_INCREMENT for table `admin`
+--
+ALTER TABLE `admin`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 --
 -- AUTO_INCREMENT for table `comments`
 --
